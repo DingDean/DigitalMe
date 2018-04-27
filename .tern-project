@@ -1,0 +1,13 @@
+{
+  "plugins": {
+    "es_modules": {},
+    "threejs": {}
+  },
+  "libs": [
+    "ecma5",
+    "ecma6",
+    "browser",
+    "threejs"
+  ],
+  "ecmaVersion": 6
+}

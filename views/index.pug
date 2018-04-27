@@ -1,0 +1,16 @@
+doctype html
+html
+  head
+    title HitMe Prototype
+    meta(http-equiv= "Content-Type" content= "text/html; charset=UTF-8")
+    meta(name= "viewport" content= "width=device-width, initial-scale=1.0")
+    script(type="application/javascript" src="/lib/socket.io.slim.js")
+    script(type="application/javascript" src="lib/three.js")
+    script(type="application/javascript" src="lib/OrbitControls.js")
+    script(type="application/javascript" src="lib/dat.gui.min.js")
+    style(type="text/css").
+      body { margin: 0; }
+      canvas { width: 100%; height: 100% }
+  body
+    script(type="application/javascript" src="/controllers/spintriangle.js")
+    script(type="application/javascript" src="/controllers/socketio.js")
