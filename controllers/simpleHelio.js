@@ -1,9 +1,7 @@
-let scene
-let camera
-let renderer
+let scene, camera, renderer, gene
 
-let assets = init()
-animate(assets)
+init()
+animate()
 
 /**
  * init
@@ -11,22 +9,32 @@ animate(assets)
  * @return {Object}
  */
 function init() {
-  scene = makeScene()
-  camera = makeCamera()
-  renderer = makeRenderer()
-  document.body.appendChild(renderer.domElement)
+  scene = new THREE.Scene()
 
-  let gene = makeGene(5, 32, 2, 20, 3)
+  camera = new THREE.PerspectiveCamera(
+    45,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+  )
+  camera.position.z = 20
+  let control = new THREE.OrbitControls(camera)
+  control.update()
+  camera.__control = control
+  camera.position.z = 100
+
+  renderer = new THREE.WebGLRenderer()
+  renderer.setPixelRatio(window.devicePixelRatio)
+  renderer.setSize(window.innerWidth, window.innerHeight)
+
+  gene = makeGene(5, 32, 2, 20, 3)
   gene.geometry.center()
   gene.rotation.x = - Math.PI / 2
   gene.rotation.y = -0.5
   scene.add(gene)
 
-  camera.position.z = 100
-
-  return {
-    gene,
-  }
+  document.body.appendChild(renderer.domElement)
+  window.addEventListener('resize', onWindowResize, false)
 }
 
 /**
@@ -34,52 +42,18 @@ function init() {
  *
  * @param {Object} assets
  */
-function animate(assets) {
-  requestAnimationFrame(() => animate(assets))
+function animate() {
+  requestAnimationFrame( animate )
   camera.__control.update()
-  assets.gene.rotation.z += 0.005
+  gene.rotation.z += 0.005
   renderer.render(scene, camera)
 }
 
-/**
- * makeScene
- *
- * @return {Object}
- */
-function makeScene() {
-  let scene = new THREE.Scene()
-  return scene
-}
+function onWindowResize () {
+  camera.aspect = window.innerWidth / window.innerHeight
+  camera.updateProjectionMatrix()
 
-/**
- * makeCamera
- *
- * @return {Object}
- */
-function makeCamera() {
-  let camera = new THREE.PerspectiveCamera(
-    45,
-    window.innerWidth / window.innerHeight,
-    2,
-    2000
-  )
-  camera.position.z = 20
-  let control = new THREE.OrbitControls(camera)
-  control.update()
-  camera.__control = control
-  return camera
-}
-
-/**
- * makeRenderer
- *
- * @return {Object}
- */
-function makeRenderer() {
-  let renderer = new THREE.WebGLRenderer()
-  renderer.setPixelRatio(window.devicePixelRatio)
-  renderer.setSize(window.innerWidth, window.innerHeight)
-  return renderer
+  renderer.setSize( window.innerWidth, window.innerHeight )
 }
 
 /**
