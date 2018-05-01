@@ -17,7 +17,9 @@ app.use('/lib', express.static( ioPath ));
 app.use('/controllers', express.static( controllerPath ));
 
 app.get('/', (req, res) => {
-  res.render('./index', {msg: "Hello World"})
+  res.render('./index', {
+    controller: "/controllers/simpleHelio.js"
+  })
 })
 
 io.on('connection', socket => {

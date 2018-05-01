@@ -1,9 +1,19 @@
-let scene
-let camera
-let renderer
+/**
+ * 混沌初开
+ * 编程聚生
+ * 页面初打开，呈现一片四散的粒子
+ * 当用户在编辑器中进行连续操作的时候，四散的粒子会慢慢聚合
+ * 最终形成象征生命的基因链条.
+ * 如果用户超过两秒不再进行输入，那么链条就会慢慢在此四散开来。
+ */
 
-let assets = init()
-animate(assets)
+let scene, camera, renderer, cloc, gene
+let x = Math.PI / 2 // 由socketio控制大小
+let intensity = 0.0
+let lastInput = 0
+
+init()
+animate()
 
 /**
  * init
@@ -11,22 +21,35 @@ animate(assets)
  * @return {Object}
  */
 function init() {
-  scene = makeScene()
-  camera = makeCamera()
-  renderer = makeRenderer()
-  document.body.appendChild(renderer.domElement)
+  clock = new THREE.Clock( /*autoStart*/true )
 
-  let gene = makeGene(5, 32, 2, 20, 3)
+  scene = new THREE.Scene()
+  scene.background = new THREE.Color( 0xffffff )
+
+  camera = new THREE.PerspectiveCamera(
+    45,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+  )
+  camera.position.z =15
+  let control = new THREE.OrbitControls(camera)
+  control.update()
+  camera.__control = control
+  camera.position.z = 100
+
+  renderer = new THREE.WebGLRenderer()
+  renderer.setPixelRatio(window.devicePixelRatio)
+  renderer.setSize(window.innerWidth, window.innerHeight)
+
+  gene = makeGene(5, 32, 2, 20, 3)
   gene.geometry.center()
   gene.rotation.x = - Math.PI / 2
   gene.rotation.y = -0.5
   scene.add(gene)
 
-  camera.position.z = 100
-
-  return {
-    gene,
-  }
+  document.body.appendChild(renderer.domElement)
+  window.addEventListener('resize', onWindowResize, false)
 }
 
 /**
@@ -34,52 +57,35 @@ function init() {
  *
  * @param {Object} assets
  */
-function animate(assets) {
-  requestAnimationFrame(() => animate(assets))
+function animate() {
+  requestAnimationFrame( animate )
   camera.__control.update()
-  assets.gene.rotation.z += 0.005
+  gene.rotation.z += 0.003
+  let scale = gene.material.uniforms.scale.value
+
+  x -= intensity
+  if ( x < 0 )
+    x = 0
+  let elapsed = clock.getElapsedTime()
+  if ( elapsed - lastInput >= 2 ) {
+    intensity = 0.0
+    x += 0.002
+    if ( x > Math.PI / 2 ) {
+      x = Math.PI / 2
+    }
+  }
+  scale = Math.sin( x )
+
+  gene.material.uniforms.scale.value = scale
+  gene.material.uniforms.u_time.value = elapsed
   renderer.render(scene, camera)
 }
 
-/**
- * makeScene
- *
- * @return {Object}
- */
-function makeScene() {
-  let scene = new THREE.Scene()
-  return scene
-}
+function onWindowResize () {
+  camera.aspect = window.innerWidth / window.innerHeight
+  camera.updateProjectionMatrix()
 
-/**
- * makeCamera
- *
- * @return {Object}
- */
-function makeCamera() {
-  let camera = new THREE.PerspectiveCamera(
-    45,
-    window.innerWidth / window.innerHeight,
-    2,
-    2000
-  )
-  camera.position.z = 20
-  let control = new THREE.OrbitControls(camera)
-  control.update()
-  camera.__control = control
-  return camera
-}
-
-/**
- * makeRenderer
- *
- * @return {Object}
- */
-function makeRenderer() {
-  let renderer = new THREE.WebGLRenderer()
-  renderer.setPixelRatio(window.devicePixelRatio)
-  renderer.setSize(window.innerWidth, window.innerHeight)
-  return renderer
+  renderer.setSize( window.innerWidth, window.innerHeight )
 }
 
 /**
@@ -89,7 +95,7 @@ function makeRenderer() {
  * @param {Number} y0
  * @param {Number} z0
  * @param {Number} radius
- * @return {Array}
+ * @return {Number[]}
  */
 function randSpherePoint(x0, y0, z0, radius) {
   let u = Math.random()
@@ -110,14 +116,39 @@ function randSpherePoint(x0, y0, z0, radius) {
  * @param {Number} z0
  * @param {Number} radius
  * @param {Number} points
- * @return {Array}
+ * @return {Number[]}
  */
 function randSpherePoints(x0, y0, z0, radius, points) {
   let vertices = []
   while (points--) {
     let randr = Math.random() * radius
     let vector = randSpherePoint(x0, y0, z0, randr)
-    vertices.push(new THREE.Vector3(...vector))
+    vertices.push( ...vector )
+  }
+  return vertices
+}
+
+/**
+ * 制作基因的横轴
+ *
+ * @param {Number[]} vecA 右侧基点
+ * @param {Number[]} vecB 左侧基点
+ * @param {Number} pointsNum 由多少粒子组成
+ * @return {Number[]}
+ */
+function makeTube(vecA, vecB, pointsNum) {
+  let vertices = []
+  while (pointsNum--) {
+    let t = Math.random()
+    let vec = []
+    for (let i=0; i<3; i++) {
+      let a = vecA[i]
+      let b = vecB[i]
+      let c = t * a + (1-t) * b
+      vec.push(c)
+    }
+    vec = vec.map((e) => e + Math.random() * 2)
+    vertices.push( ...vec )
   }
   return vertices
 }
@@ -133,9 +164,11 @@ function randSpherePoints(x0, y0, z0, radius, points) {
  * @return {Object}
  */
 function makeGene(rounds, roundStep, climbSpeed, radius, sphereRadius) {
-  let geo = new THREE.Geometry()
+  let geo = new THREE.BufferGeometry()
   let climbIndex = 0
   let intertiwne = 9
+  let positions = []
+  let POINTS_NUM = 0;
   while (rounds--) {
     let thetaIndex = 0
     let betaIndex = thetaIndex + intertiwne
@@ -148,7 +181,8 @@ function makeGene(rounds, roundStep, climbSpeed, radius, sphereRadius) {
       let y0 = radius * Math.sin(theta)
       let z0 = climbIndex * climbSpeed
       let rightPoints = randSpherePoints(x0, y0, z0, sphereRadius, 300)
-      geo.vertices.push(...rightPoints)
+      positions.push(...rightPoints)
+      POINTS_NUM += 300;
 
       let x1 = radius * Math.cos(beta)
       let y1 = radius * Math.sin(beta)
@@ -156,7 +190,8 @@ function makeGene(rounds, roundStep, climbSpeed, radius, sphereRadius) {
       let leftPoints = randSpherePoints(x1, y1,
         z0, sphereRadius, 300
       )
-      geo.vertices.push(...leftPoints)
+      positions.push(...leftPoints)
+      POINTS_NUM += 300;
 
       if (thetaIndex % 3 == 0) {
         let tubesPoints = makeTube(
@@ -164,7 +199,8 @@ function makeGene(rounds, roundStep, climbSpeed, radius, sphereRadius) {
           [x1, y1, z1],
           300
         )
-        geo.vertices.push(...tubesPoints)
+        positions.push(...tubesPoints)
+        POINTS_NUM += 300;
       }
 
       thetaIndex = (thetaIndex + 1) % roundStep
@@ -172,32 +208,36 @@ function makeGene(rounds, roundStep, climbSpeed, radius, sphereRadius) {
       climbIndex++
     }
   }
-  let mat = new THREE.PointsMaterial({size: 0.1})
+  positions = new Float32Array( positions )
+  geo.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ))
+
+  let displacement = [];
+  let pointSize = [];
+  for ( let i=0; i < POINTS_NUM; i++ ) {
+    displacement.push( Math.random() * 200  - 100)
+    displacement.push( Math.random() * 200  - 100)
+    displacement.push( Math.random() * 200  - 100)
+    pointSize.push( Math.random() * 10 - 5 )
+  }
+  displacement = new Float32Array( displacement )
+  pointSize = new Float32Array( pointSize )
+  geo.addAttribute(
+    'displacement',
+    new THREE.BufferAttribute( displacement, 3 )
+  )
+  geo.addAttribute(
+    'pointSize',
+    new THREE.BufferAttribute( pointSize, 1 )
+  )
+
+  let mat = new THREE.ShaderMaterial({
+    uniforms: {
+      scale: { value: 1.0 },
+      u_time: { value: 0.0 }
+    },
+    vertexShader: document.getElementById('vshader').textContent,
+    fragmentShader: document.getElementById('fshader').textContent
+  })
 
   return new THREE.Points(geo, mat)
-}
-
-/**
- * 制作基因的横轴
- *
- * @param {Number[]} vecA 右侧基点
- * @param {Number[]} vecB 左侧基点
- * @param {Number} pointsNum 由多少粒子组成
- * @return {Object[]}
- */
-function makeTube(vecA, vecB, pointsNum) {
-  let vertices = []
-  while (pointsNum--) {
-    let t = Math.random()
-    let vec = []
-    for (let i=0; i<3; i++) {
-      let a = vecA[i]
-      let b = vecB[i]
-      let c = t * a + (1-t) * b
-      vec.push(c)
-    }
-    vec = vec.map((e) => e + Math.random() * 2)
-    vertices.push(new THREE.Vector3(...vec))
-  }
-  return vertices
 }
