@@ -34,11 +34,11 @@ html
       #endif
 
       uniform float u_time;
-      vec3 colorA = vec3(0.149,0.141,0.912);
-      vec3 colorB = vec3(1.000,0.833,0.224);
+      vec3 colorA = vec3(0.1, 0.46, 0.82);
+      vec3 colorB = vec3(0.85, 0.26, 0.08);
 
       void main () {
-        float mixValue = abs( sin( u_time * 0.2 ) );
+        float mixValue = abs( sin( u_time * 0.4 ) );
         vec3 color = mix( colorA, colorB, mixValue );
         gl_FragColor = vec4( color, .9 );
       }
