@@ -60,7 +60,7 @@ function init() {
 function animate() {
   requestAnimationFrame( animate )
   camera.__control.update()
-  gene.rotation.z += 0.005
+  gene.rotation.z += 0.003
   let scale = gene.material.uniforms.scale.value
 
   x -= intensity
