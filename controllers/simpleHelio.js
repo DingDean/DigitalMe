@@ -33,9 +33,9 @@ function init() {
     1000
   )
   camera.position.z =15
-  let control = new THREE.OrbitControls(camera)
-  control.update()
-  camera.__control = control
+  //let control = new THREE.OrbitControls(camera)
+  //control.update()
+  //camera.__control = control
   camera.position.z = 100
 
   renderer = new THREE.WebGLRenderer()
@@ -59,7 +59,7 @@ function init() {
  */
 function animate() {
   requestAnimationFrame( animate )
-  camera.__control.update()
+  //camera.__control.update()
   gene.rotation.z += 0.003
   let scale = gene.material.uniforms.scale.value
 
