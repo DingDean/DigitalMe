@@ -5,7 +5,8 @@ app.set('view engine', 'pug')
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const path = require('path')
-const net = require('net')
+//const net = require('net')
+const zmq = require('zeromq')
 const debug = require('debug')('digitme')
 
 let libPath = path.resolve(__dirname, './lib')
@@ -39,19 +40,15 @@ http.listen(8765, () => {
   debug("listening on 8765")
 })
 
-const Gate = net.createServer(c => {
-  c.on('data', data => {
-    debug(`msg received ${data}`)
-    data = JSON.parse(data)
-    io.sockets.emit('char', data)
-  })
+const responder = zmq.socket('rep')
+
+responder.on('message', request => {
+  debug("Received message: [", request.toString(), "]")
+  io.sockets.emit('char', request.toString() )
 })
 
-Gate.on('error', err => {
-  throw(new Error(err))
-})
-
-let port = process.env.RELAY_PORT || 8764
-Gate.listen(port, () => {
-  debug(`Gateway open to ${port}`)
+responder.bind('tcp://*:5555', err => {
+  if (err)
+    return debug(err)
+  debug("Listening on 5555...")
 })
