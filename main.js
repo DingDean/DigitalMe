@@ -44,11 +44,18 @@ const responder = zmq.socket('rep')
 
 responder.on('message', request => {
   debug("Received message: [", request.toString(), "]")
+  responder.send("OK")
   io.sockets.emit('char', request.toString() )
 })
 
-responder.bind('tcp://*:5555', err => {
+let RELAY_PORT = process.env.RELAY_PORT || 8764
+responder.bind(`tcp://*:${RELAY_PORT}`, err => {
   if (err)
     return debug(err)
-  debug("Listening on 5555...")
+  debug(`Relay server listening on ${RELAY_PORT}...`)
+})
+
+process.on('SIGINT', () => {
+  responder.close()
+  process.exit()
 })
