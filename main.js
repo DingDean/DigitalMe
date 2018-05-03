@@ -40,7 +40,8 @@ http.listen(8765, () => {
   debug("listening on 8765")
 })
 
-const responder = zmq.socket('rep')
+const responder = zmq.socket('pull')
+responder.monitor()
 
 responder.on('message', request => {
   debug("Received message: [", request.toString(), "]")
