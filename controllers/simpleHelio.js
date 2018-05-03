@@ -16,6 +16,17 @@ init()
 animate()
 
 /**
+ * React to editor events
+ *
+ */
+function react () {
+  lastInput = clock.getElapsedTime()
+  intensity += 0.0005
+  if ( intensity > 0.005 )
+    intensity = 0.005
+}
+
+/**
  * init
  *
  * @return {Object}
@@ -48,6 +59,7 @@ function init() {
   gene.rotation.y = -0.5
   scene.add(gene)
 
+  renderer.domElement.addEventListener('click', react)
   document.body.appendChild(renderer.domElement)
   window.addEventListener('resize', onWindowResize, false)
 }
