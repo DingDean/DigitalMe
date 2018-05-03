@@ -7,8 +7,5 @@ socket.on('greeting', (msg) => {
 })
 
 socket.on('char', (msg) => {
-  lastInput = clock.getElapsedTime()
-  intensity += 0.0005
-  if ( intensity > 0.005 )
-    intensity = 0.005
+  react() // defined in simpleHelio.js
 })
