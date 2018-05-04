@@ -5,7 +5,6 @@ app.set('view engine', 'pug')
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const path = require('path')
-//const net = require('net')
 const zmq = require('zeromq')
 const debug = require('debug')('digitme')
 
