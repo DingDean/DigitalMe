@@ -1,3 +1,4 @@
+const debug = require('debug')('mongo')
 let Cache = function () {
   this.cache = {}
 }
@@ -18,8 +19,8 @@ module.exports = function (mongoose) {
     date: Number,
     hour: Number,
     langs: [{
-      lang: String,
-      tick: Number,
+      ftype: String,
+      ticks: Number,
       totalTime: Number // in ms
     }]
   }))
@@ -28,28 +29,12 @@ module.exports = function (mongoose) {
   // daily report for a single language
   const Lang = mongoose.model('Lang', mongoose.Schema({
     date: Number,
-    lang: String,
-    tick: Number,
+    ftype: String,
+    ticks: Number,
     totalTime: Number
   }))
 
   let utils = {}
-  /**
-   * Given a timestamp, get the date value for query and index for hour
-   *
-   * @param {Number} ts timestamp of a session
-   * @returns {Object} {query, index}
-   */
-  utils.getQueryPath = function ( ts ) {
-    let date = new Date(ts)
-    let hour = date.getHours()
-    date.setHours(0)
-    date.setMinutes(0)
-    date.setSeconds(0)
-    date.setMilliseconds(0)
-
-    return {date: date.getTime(), hour}
-  }
 
   utils.getReport = function ( query, cb ) {
     let { date, hour } = query
@@ -60,8 +45,6 @@ module.exports = function (mongoose) {
 
     Report.findOne( {date, hour}, (err, doc) => {
       if ( err ) {
-        debug('Error when finding report: ')
-        debug(err)
         return cb(null)
       }
       reportCache.set( qstring, doc )
@@ -69,35 +52,26 @@ module.exports = function (mongoose) {
     })
   }
 
-  utils.updateReport = function ( query, info, cb ) {
+  utils.updateReport = function ( query, langs, cb ) {
     let { date, hour } = query
     Report.findOne( {date, hour}, (err, doc) => {
       if (err)
         return cb(err)
       if ( !doc ) {
-        utils.createReport( query, info, (err, doc) => {
-          if (err) {
-            debug("Failed to update report: ")
-            debug(err)
+        utils.createReport( query, langs, (err, doc) => {
+          if (err)
             return cb(err)
-          }
           cb(null, doc)
         })
       } else {
-        for ( let type in info ) {
-          if ( !info.hasOwnProperty(type) )
-            continue
-          let {ticks, totalTime} = info[type]
-          let old = doc.langs.find(e => e.lang == type)
+        for ( let lang of langs ) {
+          let {type:ftype, ticks, duration} = lang
+          let old = doc.langs.find(e => e.ftype == ftype)
           if (old) {
-            old.tick += ticks
-            old.totalTime += totalTime
+            old.ticks += ticks
+            old.totalTime += duration
           } else {
-            doc.langs.push( {
-              lang: type,
-              tick: ticks,
-              totalTime
-            })
+            doc.langs.push( { ftype, ticks, totalTime: duration })
           }
         }
         doc.save( (err, doc) => {
@@ -110,14 +84,12 @@ module.exports = function (mongoose) {
     })
   }
 
-  utils.createReport = function ( query, info, cb ) {
+  utils.createReport = function ( query, langs, cb ) {
     let { date, hour } = query
     let record = { date, hour, langs: [] };
-    for (let type in info) {
-      if ( !info.hasOwnProperty(type) )
-        continue
-      let {ticks, totalTime} = info[type]
-      record.langs.push( {lang:type, tick: ticks, totalTime} )
+    for (let lang of langs) {
+      let {type:ftype, ticks, duration} = lang
+      record.langs.push( {ftype, ticks, totalTime: duration} )
     }
     let report = new Report(record)
     report.save( (err, doc) =>{
@@ -139,6 +111,45 @@ module.exports = function (mongoose) {
       langCache.set( qstring, doc )
       cb(null, doc)
     } )
+  }
+
+  utils.updateLangs = function ( langsInfo ) {
+    for ( let qs in langsInfo ) {
+      if ( !langsInfo.hasOwnProperty(qs) )
+        continue
+
+      let info = langsInfo[qs]
+      let {date, ftype, ticks, duration} = info
+      Lang.findOne( {date, ftype}, (err, doc) => {
+        if (err)
+          return debug(err)
+        if (!doc) {
+          utils.createLang( info, (err, doc) => {
+            if (err)
+              debug(err)
+          })
+        } else {
+          doc.ticks += ticks
+          doc.totalTime += duration
+          doc.save( (err, doc) => {
+            if (err)
+              return debug(err)
+            langCache.set(`${date}#${ftype}`, doc)
+          } )
+        }
+      } )
+    }
+  }
+
+  utils.createLang = function ( info, cb ) {
+    let {date, ftype, ticks, duration:totalTime} = info
+    let lang = new Lang({date, ftype, ticks, totalTime})
+    lang.save( (err, doc) => {
+      if (err)
+        return cb(err, doc)
+      langCache.set( `${date}#${ftype}`, doc )
+      cb( null, doc )
+    })
   }
 
   return { Report, Lang, utils }
