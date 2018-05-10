@@ -5,8 +5,13 @@ app.set('view engine', 'pug')
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const path = require('path')
-const zmq = require('zeromq')
 const debug = require('debug')('digitme')
+const relay = require('./src/relay.js')
+const mongoose = require('mongoose')
+mongoose.connect('mongodb://localhost/digitalme')
+const mongo = require('./src/mongodb.js')(mongoose)
+const utils = require('./src/utils.js')
+
 
 let libPath = path.resolve(__dirname, './lib')
 let ioPath = path.resolve(__dirname, './node_modules/socket.io-client/dist/')
@@ -39,23 +44,35 @@ http.listen(8765, () => {
   debug("listening on 8765")
 })
 
-const responder = zmq.socket('pull')
-responder.monitor()
+relay.on('digit_ping', data => {
+  io.sockets.emit('char')
+})
 
-responder.on('message', request => {
-  debug("Received message: [", request.toString(), "]")
-  responder.send("OK")
-  io.sockets.emit('char', request.toString() )
+relay.on('digit_session', data => {
+  debug("Session received:")
+  debug(data)
+  let { ts, history=[] } = data
+
+  let reportInfo = utils.parseForReport( history )
+  for ( let qstring in reportInfo ) {
+    if ( !reportInfo.hasOwnProperty(qstring) )
+      continue
+    let { date, hour, langs } = reportInfo[qstring]
+    mongo.utils.updateReport( {date, hour}, langs, (err, doc) => {
+      if (err) {
+        debug("Failed to update report")
+        debug(err)
+      }
+    })
+  }
+
+  let langInfo = utils.parseForLangs( history )
+  mongo.utils.updateLangs(langInfo)
 })
 
 let RELAY_PORT = process.env.RELAY_PORT || 8764
-responder.bind(`tcp://*:${RELAY_PORT}`, err => {
+relay.listen(`tcp://*:${RELAY_PORT}`, err => {
   if (err)
     return debug(err)
   debug(`Relay server listening on ${RELAY_PORT}...`)
-})
-
-process.on('SIGINT', () => {
-  responder.close()
-  process.exit()
 })
