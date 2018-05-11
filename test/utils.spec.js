@@ -11,24 +11,32 @@ describe('utils', function () {
   ]
 
   describe('parseForReport', function () {
-    it(
-      `should return a object with structure:
-      {
-        "xxx": {date: Number, hour: Number, langs: [{type, ticks, duration}]
-      }
-      `,
-      function () {
-        let result = utils.parseForReport( history )
-        assert( result.hasOwnProperty( `${base}#0` ) )
-        assert( result.hasOwnProperty( `${base}#2` ) )
-        let info = result[`${base}#0`]
-        assert.equal( info.date, base )
-        assert.equal( info.hour, 0 )
-        assert.equal( info.langs.length, 1 )
-        let lang = info.langs[0]
-        assert.equal( lang.type, 'js' )
-        assert.equal( lang.ticks, 2 )
-        assert.equal( lang.duration, 900 )
+    var report
+    before(function () {
+      report = utils.parseForReport( history )
+    })
+
+    it('should return an object', function () {
+      assert.equal( typeof report, 'object' )
+    })
+
+    it('with property name in date#hour', function () {
+      assert( report.hasOwnProperty( `${base}#0` ) )
+      assert( report.hasOwnProperty( `${base}#2` ) )
+    })
+
+    it('each with value of {date, hour, langs}', function () {
+      let info = report[`${base}#0`]
+      assert.equal( info.date, base )
+      assert.equal( info.hour, 0 )
+      assert.equal( info.langs.length, 1 )
+    })
+
+    it('where langs is array of {type, ticks, duration}', function () {
+      let langs = report[`${base}#0`].langs[0]
+      assert.equal( langs.type, 'js' )
+      assert.equal( langs.ticks, 2 )
+      assert.equal( langs.duration, 900 )
     })
   })
 
