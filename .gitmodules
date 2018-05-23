@@ -1,0 +1,3 @@
+[submodule "pwa-digitalme"]
+	path = pwa-digitalme
+	url = https://github.com/DingDean/pwa-digitalme.git
