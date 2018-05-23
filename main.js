@@ -1,7 +1,6 @@
 require('dotenv').config()
 const express = require('express')
 const app = express()
-app.set('view engine', 'pug')
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const path = require('path')
@@ -17,14 +16,15 @@ let libPath = path.resolve(__dirname, './lib')
 let ioPath = path.resolve(__dirname, './node_modules/socket.io-client/dist/')
 let controllerPath = path.resolve(__dirname, './controllers')
 
-app.use('/lib', express.static( libPath ));
-app.use('/lib', express.static( ioPath ));
-app.use('/controllers', express.static( controllerPath ));
+let staticPath = path.resolve(__dirname, './pwa-digitalme/dist')
+
+//app.use('/lib', express.static( libPath ));
+//app.use('/lib', express.static( ioPath ));
+//app.use('/controllers', express.static( controllerPath ));
+app.use('/', express.static(staticPath))
 
 app.get('/', (req, res) => {
-  res.render('./index', {
-    controller: "/controllers/simpleHelio.js"
-  })
+  res.send( path.resolve( staticPath, './index.html' ) )
 })
 
 io.on('connection', socket => {
@@ -45,13 +45,14 @@ http.listen(8765, () => {
 })
 
 relay.on('digit_ping', data => {
+  debug('ping')
   io.sockets.emit('char')
 })
 
 relay.on('digit_session', data => {
   debug("Session received:")
   debug(data)
-  let { ts, history=[] } = data
+  let { ts, history=[], tomatos=[] } = data
 
   let reportInfo = utils.parseForReport( history )
   for ( let qstring in reportInfo ) {
