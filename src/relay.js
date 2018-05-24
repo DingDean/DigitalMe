@@ -5,23 +5,23 @@ const EventEmitter = require('events')
 class Wrapper extends EventEmitter {}
 
 const wrapper = new Wrapper()
-wrapper.listen = function ( path, callback ) {
+wrapper.listen = function (path, callback) {
   const responder = zmq.socket('pull')
   responder.monitor()
 
   responder.on('message', request => {
-    let msg = JSON.parse( request.toString() )
-    debug("Received message: [", msg, "]")
+    let msg = JSON.parse(request.toString())
+    debug('Received message: [', msg, ']')
     let {event, data} = msg
     wrapper.emit(event, data)
   })
 
   responder.on('error', err => {
     responder.close()
-    throw(new Error(err))
+    throw (new Error(err))
   })
 
-  responder.bind( path, callback )
+  responder.bind(path, callback)
 
   process.on('SIGINT', () => {
     responder.close()
