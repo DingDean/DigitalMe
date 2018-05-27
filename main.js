@@ -8,14 +8,10 @@ const debug = require('debug')('digitme')
 const relay = require('./src/relay.js')
 const mongoose = require('mongoose')
 mongoose.connect('mongodb://localhost/digitalme')
-const mongo = require('./src/mongodb.js')(mongoose)
+const mongo = require('./src/mongodb')
 const utils = require('./src/utils.js')
 
 let staticPath = path.resolve(__dirname, './pwa-digitalme/dist')
-
-// app.use('/lib', express.static( libPath ));
-// app.use('/lib', express.static( ioPath ));
-// app.use('/controllers', express.static( controllerPath ));
 app.use('/', express.static(staticPath))
 
 app.get('/', (req, res) => {
@@ -53,7 +49,7 @@ relay.on('digit_session', data => {
   for (let qstring in reportInfo) {
     if (!reportInfo.hasOwnProperty(qstring)) continue
     let { date, hour, langs } = reportInfo[qstring]
-    mongo.utils.updateReport({date, hour}, langs, (err, doc) => {
+    mongo.updateReport({date, hour}, langs, (err, doc) => {
       if (err) {
         debug('Failed to update report')
         debug(err)
@@ -62,10 +58,10 @@ relay.on('digit_session', data => {
   }
 
   let langInfo = utils.parseForLangs(history)
-  mongo.utils.updateLangs(langInfo)
+  mongo.updateLangs(langInfo)
 
   let tomatoInfo = utils.parseForTomatos(tomatos)
-  mongo.utils.updateTomatos(tomatoInfo)
+  mongo.updateTomatos(tomatoInfo)
 })
 
 let RELAY_PORT = process.env.RELAY_PORT || 8764
