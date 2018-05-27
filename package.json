@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha -cw ./test",
-    "dev": "DEBUG=digitme node main.js"
+    "dev": "DEBUG=digitme node main.js",
+    "lint": "eslint ./src"
   },
   "keywords": [],
   "author": "Ke Ding <me@dingkewz.com> (https://dingkewz.com)",
