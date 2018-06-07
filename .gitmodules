@@ -1,3 +1,6 @@
 [submodule "pwa-digitalme"]
 	path = pwa-digitalme
 	url = https://github.com/DingDean/pwa-digitalme.git
+[submodule "protos"]
+	path = protos
+	url = https://github.com/DingDean/proto-digitalme.git
