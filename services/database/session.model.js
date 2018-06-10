@@ -91,6 +91,7 @@ function genFullReport (docs) {
   let flow = []
   for (let doc of docs) {
     let {filetype, totalTime, ticks, start} = doc
+    start = start.getTime()
     let lang = langs.find(e => e.filetype === filetype)
     if (lang)
       lang.totalTime += totalTime
@@ -123,6 +124,7 @@ function updateReportCache (sessions, cb) {
 
 function updateCache (session) {
   let {start: from, totalTime: elapsed, filetype, ticks} = session
+  from = from.getTime()
   let lang = cache.langs.find(e => e.filetype === filetype)
   if (lang)
     lang.totalTime += elapsed
@@ -139,7 +141,7 @@ function cacheEcho () {
   for (let lang of cache.langs) {
     let t = lang.totalTime
     let type = lang.filetype
-    let frac = Math.floor(t / totalTime) * 100
+    let frac = Math.floor((t / totalTime) * 100)
     debug(`${descTime(t)} is spent on ${type}, accounts for ${frac}%`)
   }
 }
