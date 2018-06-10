@@ -27,7 +27,7 @@ io.on('connection', socket => {
   })
 })
 
-pager.run('0.0.0.0:50052', null, io)
+pager.run('0.0.0.0:50052', /* use default credentials */null, io)
 
 http.listen(8765, () => {
   debug('listening on 8765')
