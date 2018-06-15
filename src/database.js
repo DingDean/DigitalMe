@@ -3,7 +3,9 @@ const path = require('path')
 const grpc = require('grpc')
 const proto = path.resolve(__dirname, '../protos/database.proto')
 const database = grpc.load(proto).database
+const moment = require('moment')
 
+let _dbClient = null
 function init (endpoint, credentials, cb) {
   credentials = credentials || grpc.credentials.createInsecure()
   let client = new database.DbService(
@@ -14,19 +16,26 @@ function init (endpoint, credentials, cb) {
       return cb(err)
     else
       debug('Connected to remote database service')
-    if (cb) cb(null, client)
+    _dbClient = client
+    if (cb) cb(null)
   })
 }
 exports.init = init
 
-function getLiveReport (client, io) {
-  let call = client.liveDailyReport({})
+let reportCache = null
+function getLiveReport () {
+  return reportCache
+}
+exports.getLiveReport = getLiveReport
+function subLiveReport () {
+  let call = _dbClient.liveDailyReport({})
   call.on('data', report => {
     debug('Daily report updated')
     echo(report)
+    reportCache = report
   })
   call.on('error', err => {
-    debug(err)
+    throw (new Error(err))
   })
   call.on('end', () => {
     debug('Daily report stream ends')
@@ -56,4 +65,41 @@ function descTime (elapsed) {
   )
   return `${hour} hour, ${minutes} minutes and ${seconds} seconds`
 }
-exports.getLiveReport = getLiveReport
+exports.subLiveReport = subLiveReport
+
+let weekCache = null
+exports.getWeekReport = function (cb) {
+  if (weekCache && isUpToDate(weekCache.lastUpdate))
+    return cb(null, weekCache)
+  getWeekReport(cb)
+}
+function isUpToDate (ts) {
+  return moment().isSame(new Date(ts), 'day')
+}
+function getWeekReport (cb) {
+  let end = moment().startOf('day').valueOf()
+  let from = moment(end).subtract(7, 'day').valueOf()
+  _dbClient.getFullReport({from, end}, (err, res) => {
+    if (err) return cb(err, [])
+    let {reports} = res
+
+    let weekReport = {langs: [], flow: []}
+    for (let report of reports) {
+      let {date, langs, flow} = report
+      date = Number(date)
+      langs = langs.map(e => {
+        e.date = date
+        return e
+      })
+      flow = flow.map(e => {
+        e.date = date
+        return e
+      })
+      weekReport.langs.push(...langs)
+      weekReport.flow.push(...flow)
+    }
+    weekReport.lastUpdate = Date.now()
+    weekCache = weekReport
+    cb(null, weekReport)
+  })
+}
