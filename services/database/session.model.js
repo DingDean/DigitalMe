@@ -50,7 +50,7 @@ function mapType (type) {
 exports.save = saveSession
 
 function getDailySessions (callback) {
-  return Session.aggregate([
+  Session.aggregate([
     {
       '$addFields': {
         'year': {'$year': '$start'},
@@ -70,14 +70,17 @@ function getDailySessions (callback) {
 
 let cache = null
 function getDailyReport (cb) {
-  if (cache && isUpToDate(cache.date))
+  if (cache && isUpToDate(cache.date)) {
+    debug(`server daily report cache: ${new Date(cache.date)}`)
     return cb(cache)
+  }
   getDailySessions((err, docs) => {
     if (err) {
       debug(err)
       return []
     }
     cache = genFullReport(docs)
+    debug(`new daily report is generated and served: ${new Date(cache.date)}`)
     cb(cache)
   })
 }
@@ -160,3 +163,78 @@ function descTime (elapsed) {
 
 exports.getDailyReport = getDailyReport
 exports.updateReportCache = updateReportCache
+
+function getSessions (timeRange, callback) {
+  let {from, end} = timeRange
+  from = new Date(from)
+  end = new Date(end)
+
+  Session.aggregate([
+    {
+      '$match': {
+        'start': {'$gte': from, '$lte': end}
+      }
+    },
+    {
+      '$group': {
+        _id: {
+          'year': {'$year': '$start'},
+          'month': {'$month': '$start'},
+          'day': {'$dayOfMonth': '$start'}
+        },
+        'langs': {'$push': {
+          filetype: '$filetype', totalTime: '$totalTime'
+        }},
+        'flow': {'$push': {
+          filetype: '$filetype',
+          from: '$start',
+          ticks: '$ticks',
+          elapsed: '$totalTime'
+        }}
+      }
+    }
+  ], callback)
+}
+
+function getLangReport (timeRange, callback) {
+  getSessions(timeRange, (err, docs) => {
+    if (err) {
+      debug(err)
+      return []
+    }
+    let reports = []
+    for (let doc of docs) {
+      let {langs, _id} = doc
+      let {year, month, day} = _id
+      let date = new Date(`${year}-${month}-${day}`).getTime()
+      reports.push({langs, date})
+    }
+    reports.sort((a, b) => a.date > b.date) // ascending
+    callback(reports)
+  })
+}
+exports.getLangReport = getLangReport
+
+function getFullReport (timeRange, callback) {
+  getSessions(timeRange, (err, docs) => {
+    if (err) {
+      debug(err)
+      let tmp = []
+      return callback(tmp)
+    }
+    let reports = []
+    for (let doc of docs) {
+      let {langs, flow, _id} = doc
+      let {year, month, day} = _id
+      let date = new Date(`${year}-${month}-${day}`).getTime()
+      flow = flow.map(e => {
+        e.from = e.from.getTime()
+        return e
+      })
+      reports.push({langs, flow, date})
+    }
+    reports.sort((a, b) => a.date > b.date) // ascending
+    callback(reports)
+  })
+}
+exports.getFullReport = getFullReport
