@@ -63,10 +63,12 @@ function getTimeflow (call, callback) {
 
 // TODO:
 function getFullReport (call, callback) {
-  let {TimeRange} = call.request
-  debug('onGetTimeflow')
-  debug(TimeRange)
-  callback(null, {reports: []})
+  let {from, end} = call.request
+  from = Number(from)
+  end = Number(end)
+  session.getFullReport({from, end}, reports => {
+    callback(null, {reports})
+  })
 }
 
 let subs = []
