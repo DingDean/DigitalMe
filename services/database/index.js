@@ -1,3 +1,4 @@
+require('dotenv').config()
 const mongoose = require('mongoose')
 const debug = require('debug')('dgmc:session')
 const session = require('./session.model.js')
