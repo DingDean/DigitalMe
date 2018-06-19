@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const debug = require('debug')('dgmc:session')
 const session = require('./session.model.js')
 const path = require('path')
+const moment = require('moment')
 
 const grpc = require('grpc')
 const proto = path.resolve(__dirname, '../../protos/database.proto')
@@ -100,11 +101,23 @@ function run (endpoint, credentials, mongo) {
   })
   server.bind(endpoint, credentials)
   server.start()
+  updateAtMidnight()
+}
+
+function updateAtMidnight () {
+  let midnight = moment().endOf('day').valueOf()
+  let timeout = midnight - Date.now()
+  setTimeout(() => {
+    session.clearCache()
+    setInterval(() => {
+      session.clearCache()
+    }, 86400000)
+  }, timeout)
 }
 
 if (require.main === module) {
   run('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(),
-    'mongodb://localhost/dgmc'
+    process.env.MONGODB || 'mongodb://localhost/dgmc'
   )
 }
 exports.run = run

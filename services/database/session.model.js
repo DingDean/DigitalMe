@@ -163,6 +163,9 @@ function descTime (elapsed) {
 
 exports.getDailyReport = getDailyReport
 exports.updateReportCache = updateReportCache
+exports.clearCache = function () {
+  cache = null
+}
 
 function getSessions (timeRange, callback) {
   let {from, end} = timeRange
