@@ -117,7 +117,8 @@ function updateAtMidnight () {
 }
 
 if (require.main === module) {
-  run('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(),
+  let endpoint = process.env.DB_SERVICE || '0.0.0.0:50051'
+  run(endpoint, grpc.ServerCredentials.createInsecure(),
     process.env.MONGODB || 'mongodb://localhost/dgmc'
   )
 }

@@ -38,7 +38,8 @@ io.on('connection', socket => {
 })
 
 pager.run('0.0.0.0:50052', /* use default credentials */null, io)
-database.init('localhost:50051', null, (err) => {
+let dbEndpoint = process.env.DB_SERVICE || '0.0.0.0:50051'
+database.init(dbEndpoint, null, (err) => {
   if (err)
     throw (new Error(err)) // TODO: throw?
   database.subLiveReport((err) => {
