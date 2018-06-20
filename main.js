@@ -37,7 +37,8 @@ io.on('connection', socket => {
   })
 })
 
-pager.run('0.0.0.0:50052', /* use default credentials */null, io)
+let pgEndpoint = process.env.PAGER_SERVICE || '0.0.0.0:50052'
+pager.run(pgEndpoint, /* use default credentials */null, io)
 let dbEndpoint = process.env.DB_SERVICE || '0.0.0.0:50051'
 database.init(dbEndpoint, null, (err) => {
   if (err)
