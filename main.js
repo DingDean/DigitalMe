@@ -1,4 +1,3 @@
-require('dotenv').config()
 const express = require('express')
 const app = express()
 const http = require('http').Server(app)
@@ -7,6 +6,7 @@ const path = require('path')
 const debug = require('debug')('dgmc')
 const pager = require(path.resolve(__dirname, './services/pager'))
 const database = require('./src/database.js')
+require('dotenv').config()
 
 let staticPath = path.resolve(__dirname, './pwa-digitalme/dist')
 app.use('/', express.static(staticPath))
