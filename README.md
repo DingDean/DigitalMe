@@ -10,6 +10,10 @@ It uses a set of applications to collect and visualize data:
     * [vim-digitme](https://github.com/DingDean/vim-digitme)
 * [pwa-digitalme](https://github.com/DingDean/pwa-digitalme)
   - The front end pwa application to visualize the collected data
+* [search-digitalme](https://github.com/DingDean/search-digitalme)
+  - A Chrome extension to capture and send search queries back to a designated server
+* [Mineself](https://github.com/DingDean/Mineself)
+  - Analysis of web queries footprint
 
 It collects your coding informations like filetype, coding speed, coding 
 patterns. 
