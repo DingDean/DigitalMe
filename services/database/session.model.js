@@ -40,7 +40,8 @@ const mapping = {
   'js': 'javascript',
   'md': 'markdown',
   'go': 'golang',
-  'vim': 'vimscript'
+  'vim': 'vimscript',
+  'py': 'python'
 }
 function mapType (type) {
   if (mapping[type])
