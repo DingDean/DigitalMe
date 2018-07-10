@@ -29,6 +29,10 @@ app.get('/api/weekReport', (req, res) => {
   })
 })
 
+app.post('/search', (req, res) => {
+  database.saveSearch()
+})
+
 io.on('connection', socket => {
   debug('A user connected')
 
