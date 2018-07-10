@@ -47,7 +47,6 @@ function mapType (type) {
     return mapping[type]
   return type
 }
-exports.save = saveSession
 
 function getDailySessions (callback) {
   Session.aggregate([
@@ -161,12 +160,6 @@ function descTime (elapsed) {
   return `${hour} hour, ${minutes} minutes and ${seconds} seconds`
 }
 
-exports.getDailyReport = getDailyReport
-exports.updateReportCache = updateReportCache
-exports.clearCache = function () {
-  cache = null
-}
-
 function getSessions (timeRange, callback) {
   let {from, end} = timeRange
   from = new Date(from)
@@ -216,7 +209,6 @@ function getLangReport (timeRange, callback) {
     callback(reports)
   })
 }
-exports.getLangReport = getLangReport
 
 function getFullReport (timeRange, callback) {
   getSessions(timeRange, (err, docs) => {
@@ -240,4 +232,12 @@ function getFullReport (timeRange, callback) {
     callback(reports)
   })
 }
-exports.getFullReport = getFullReport
+
+module.exports = {
+  save: saveSession,
+  getLangReport,
+  getFullReport,
+  getDailyReport,
+  updateReportCache,
+  clearCache: () => { cache = null }
+}

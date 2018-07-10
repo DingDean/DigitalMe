@@ -18,3 +18,14 @@ It's dynamic. When you type, the web interface would react
 correspondingly with the behaviour that you can personalize.
 
 Ultimately, it's a digilization of yourself.
+
+## TODO
+
+- [ ] gRPC Authentication
+- [ ] HTTP JWT Authentication
+- [ ] Cache Rewrite
+- [ ] More functions without side-effect
+- [ ] Better Unit Test
+- [ ] Better Integrate Test
+- [ ] CI/CD
+- [ ] Better way to handle submodule

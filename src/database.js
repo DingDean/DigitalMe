@@ -20,13 +20,11 @@ function init (endpoint, credentials, cb) {
     if (cb) cb(null)
   })
 }
-exports.init = init
 
 let reportCache = null
 function getLiveReport () {
   return reportCache
 }
-exports.getLiveReport = getLiveReport
 function subLiveReport () {
   let call = _dbClient.liveDailyReport({})
   call.on('data', report => {
@@ -65,18 +63,17 @@ function descTime (elapsed) {
   )
   return `${hour} hour, ${minutes} minutes and ${seconds} seconds`
 }
-exports.subLiveReport = subLiveReport
 
 let weekCache = null
-exports.getWeekReport = function (cb) {
+function getWeekReport (cb) {
   if (weekCache && isUpToDate(weekCache.lastUpdate))
     return cb(null, weekCache)
-  getWeekReport(cb)
+  fetchWeekReport(cb)
 }
 function isUpToDate (ts) {
   return moment().isSame(new Date(ts), 'day')
 }
-function getWeekReport (cb) {
+function fetchWeekReport (cb) {
   let end = moment().startOf('day').valueOf()
   let from = moment(end).subtract(7, 'day').valueOf()
   _dbClient.getFullReport({from, end}, (err, res) => {
@@ -102,4 +99,11 @@ function getWeekReport (cb) {
     weekCache = weekReport
     cb(null, weekReport)
   })
+}
+
+module.exports = {
+  init,
+  subLiveReport,
+  getLiveReport,
+  getWeekReport
 }
